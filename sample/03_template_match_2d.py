@@ -76,15 +76,12 @@ if __name__ == '__main__':
 
         tcenter = mouse_param[0]
         is_clicked = mouse_param[1]
-        if is_clicked:
+
+        if is_clicked:  # template initialization requested
             tmplt = cv2.getRectSubPix(input_prev, (twidth, theight), tcenter)
-            mouse_param[1] = False
+            mouse_param[1] = False  # request completed
 
         if tcenter != (-1, -1):
-
-            ## update template every frame
-            #tmplt = cv2.getRectSubPix(input_prev, (twidth, theight), tcenter)
-
             tcenter = matchTemplate(input, tmplt, tcenter, 
                                     (twidth + 2 * search_margin,
                                      theight + 2 * search_margin))

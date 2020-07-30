@@ -8,14 +8,11 @@ def onMouse(event, x, y, flag, param):
         param[0] = (x, y)
         param[1] = True
 
-def trackHomographyLK(image, tmplt, G):
-    max_iter = 20
-
-    theight = tmplt.shape[0]
-    twidth = tmplt.shape[1]
+def precomputeDerivatives(T):
+    theight = T.shape[0]
+    twidth = T.shape[1]
     npix = twidth * theight
 
-    T = np.float32(tmplt)
     grad_x = np.gradient(T, axis=1).reshape(npix, 1)
     grad_y = np.gradient(T, axis=0).reshape(npix, 1)
 
@@ -33,11 +30,20 @@ def trackHomographyLK(image, tmplt, G):
 
     Hessian = np.dot(J.T, J)
 
+    return J, Hessian
+
+
+def trackHomographyLK(image, T, J, Hessian, G):
+    max_iter = 20
+
+    theight = T.shape[0]
+    twidth = T.shape[1]
+    npix = twidth * theight
+
     for iter in range(max_iter):
-        Iw = cv2.warpPerspective(image, inv(G), (T.shape[1], T.shape[0]))
+        Iw = cv2.warpPerspective(image, inv(G), (twidth, theight))
         Iw = np.float32(Iw)
         e = (Iw - T).reshape(npix)
-        
         p = np.linalg.solve(Hessian, np.dot(J.T, e))
         G_p = np.array([[1 + p[0], p[1], p[2]],
                         [p[3], 1 + p[4], p[5]],
@@ -78,8 +84,11 @@ if __name__ == '__main__':
 
         tcenter = mouse_param[0]
         is_clicked = mouse_param[1]
+
         if is_clicked:
             tmplt = cv2.getRectSubPix(input, (twidth, theight), tcenter)
+            T = np.float32(tmplt)
+            J, Hessian = precomputeDerivatives(T)
             ipnts = np.float32([
                 [tcenter[0] - twidth / 2, tcenter[1] - theight / 2],
                 [tcenter[0] - twidth / 2, tcenter[1] + theight / 2],
@@ -91,7 +100,7 @@ if __name__ == '__main__':
 
         if tcenter != (-1, -1):
             try:
-                G = trackHomographyLK(input, tmplt, G)
+                G = trackHomographyLK(input, T, J, Hessian, G)
                 ipnts = cv2.perspectiveTransform(np.float32([tpnts]), G)
                 cv2.polylines(input_color, np.int32(ipnts), 1, (0, 0, 255), 2)
                 cv2.imshow("template", tmplt)
