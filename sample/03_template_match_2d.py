@@ -20,20 +20,25 @@ def SSD(tmplt, candidate):
     return ssd_val
 
 @jit
-def matchTemplate(image, tmplt, tcenter, search_size):
+def matchTemplate(image, tmplt, tcenter, search_margin):
     iheight = image.shape[0]
     iwidth = image.shape[1]
     theight = tmplt.shape[0]
     twidth = tmplt.shape[1]
 
-    sxmin = max(0, tcenter[0] - int(search_size[0] / 2))
-    sxmax = min(iwidth - twidth - 1, tcenter[0] + int(search_size[0] / 2))
-    symin = max(0, tcenter[1] - int(search_size[1] / 2))
-    symax = min(iheight - theight - 1, tcenter[1] + int(search_size[1] / 2))
+    sxbegin = tcenter[0] - int(twidth / 2) - search_margin
+    sybegin = tcenter[1] - int(theight / 2) - search_margin
+    sxend = tcenter[0] - int(twidth / 2) + search_margin
+    syend = tcenter[1] - int(theight / 2) + search_margin
+
+    sxbegin = max(0, sxbegin)
+    sybegin = max(0, sybegin)
+    sxend = min(sxend, iwidth - twidth)
+    syend = min(syend, iheight - theight)
 
     min_ssd = sys.maxsize
-    for j in range(symin, symax + 1):
-        for i in range(sxmin, sxmax + 1):
+    for j in range(sybegin, syend):
+        for i in range(sxbegin, sxend):
             candidate = image[j:(j + theight), i:(i + twidth)]
             ssd = SSD(tmplt, candidate)
             if ssd < min_ssd:
@@ -82,9 +87,8 @@ if __name__ == '__main__':
             mouse_param[1] = False  # request completed
 
         if tcenter != (-1, -1):
-            tcenter = matchTemplate(input, tmplt, tcenter, 
-                                    (twidth + 2 * search_margin,
-                                     theight + 2 * search_margin))
+            tcenter = matchTemplate(input, tmplt, tcenter, search_margin)
+
             cv2.rectangle(input_color, 
                           (tcenter[0] - int(twidth / 2),
                            tcenter[1] - int(theight / 2)),
@@ -95,7 +99,7 @@ if __name__ == '__main__':
                           (tcenter[0] - int(twidth / 2) - search_margin,
                            tcenter[1] - int(theight / 2) - search_margin),
                           (tcenter[0] + int(twidth / 2) + search_margin,
-                           tcenter[1] + int(theight / 2) + search_margin), 
+                           tcenter[1] + int(theight / 2) + search_margin),
                           (0, 255, 0), 1)
             cv2.imshow("template", tmplt)
             
