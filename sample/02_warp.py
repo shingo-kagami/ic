@@ -86,7 +86,8 @@ if __name__ == '__main__':
 
         disp = input.copy()
         for k in range(4):
-            cv2.circle(disp, tuple(src_pnts[k]), 3, (0, 255, 0), -1)
+            ## OpenCV 4 requires integer coordinates for center of circle
+            cv2.circle(disp, src_pnts[k].astype(np.int32), 3, (0, 255, 0), -1)
 
         cv2.polylines(disp, [np.int32(src_pnts)], True, (0, 255, 0), 1)
 
