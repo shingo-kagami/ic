@@ -21,7 +21,7 @@ def filter3x3_impl(src, weight):
             for n in range(3):
                 for m in range(3):
                     sum += weight[n, m] * src[j + n - 1, i + m - 1]
-                dest[j, i] = sum
+            dest[j, i] = sum
 
     return dest
 
